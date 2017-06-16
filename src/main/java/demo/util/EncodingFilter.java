@@ -13,7 +13,7 @@ import java.io.IOException;
 @WebFilter(urlPatterns = "/*")
 public class EncodingFilter implements Filter {
 
-    private static final String QWER="UTF-8";
+    private static final String QWER = "UTF-8";
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {

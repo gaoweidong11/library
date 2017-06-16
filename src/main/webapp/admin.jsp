@@ -10,16 +10,15 @@
 <html>
 <head>
     <title>Title</title>
+    <style>
+        @import "css/style.css";
+    </style>
+    <script>
+        function del() {
+            return confirm('是否要删除？');
+        }
+    </script>
 </head>
-<style>
-    table {
-        border-collapse: collapse;
-    }
-    th,
-    td {
-        border: 1px #333 solid;
-    }
-</style>
 <body>
 <c:if test="${sessionScope.role ne '管理员'}">  <%-- cole  角色--%>
     <c:redirect url="default.jsp"/>
@@ -60,7 +59,7 @@ ${sessionScope.username}
             <td>${book.price}</td>
             <td>${book.amount}</td>
             <td><a href="book?action=queryById&id=${book.id}">编辑</a></td>
-            <td><a href="book?action=remove&id=${book.id}">删除</a></td>
+            <td><a href="book?action=remove&id=${book.id}" onclick="return del()">删除</a></td>
         </tr>
     </c:forEach>
 </table>
