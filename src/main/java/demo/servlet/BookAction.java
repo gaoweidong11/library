@@ -25,39 +25,46 @@ import java.util.List;
  */
 @WebServlet(urlPatterns = "/book")
 public class BookAction extends HttpServlet {
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
 
-        if("add".equals(action)) {   //add  增加
+        if("add".equals(action)) {
             add(req, resp);
             return;
         }
-        if("queryAll".equals(action)) { // queryAll   全部查询
+
+        if("queryAll".equals(action)) {
             queryAll(req, resp);
             return;
         }
-        if("queryById".equals(action)) {   // queryById  全部通过 id
+
+        if("queryById".equals(action)) {
             queryById(req, resp);
             return;
         }
-        if("modify".equals(action)) {  // modify  修改
+
+        if("remove".equals(action)) {
+            remove(req, resp);
+            return;
+        }
+
+
+        if("modify".equals(action)) {
             modify(req, resp);
             return;
         }
-        if("remove".equals(action)) {  //remove  删除
-            remove(req,resp);
+
+        if("query".equals(action)) {
+            query(req, resp);
             return;
         }
-        if("query".equals(action)) {  //  query  全部
-            query(req,resp);
-            return;
-        }
+
         Error.showError(req, resp);
     }
 
     private void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
         String title = req.getParameter("title").trim();
         String author = req.getParameter("author").trim();
         String pub = req.getParameter("pub").trim();
@@ -65,9 +72,9 @@ public class BookAction extends HttpServlet {
         double price = Double.parseDouble(req.getParameter("price").trim());
         int amount = Integer.parseInt(req.getParameter("amount").trim());
 
-        Connection connection = Db.getConnection(); //  数据库连接
-        PreparedStatement preparedStatement = null;   //初始化
-        String sql = "INSERT INTO db_library.book VALUES (NULL ,?,?,?,?,?,?)";
+        Connection connection = Db.getConnection();
+        PreparedStatement preparedStatement = null;
+        String sql = "INSERT INTO javaee_library.book VALUES(NULL, ?, ?, ?, ?, ?, ?)";
 
         try {
             if(connection != null) {
@@ -84,6 +91,7 @@ public class BookAction extends HttpServlet {
             preparedStatement.setInt(6, amount);
 
             preparedStatement.executeUpdate();
+
             resp.sendRedirect("book?action=queryAll");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -96,7 +104,7 @@ public class BookAction extends HttpServlet {
         Connection connection = Db.getConnection();
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
-        String sql = "SELECT * FROM db_library.book ORDER BY id";
+        String sql = "SELECT * FROM javaee_library.book ORDER BY id";
 
         try {
             if(connection != null) {
@@ -105,6 +113,7 @@ public class BookAction extends HttpServlet {
                 Error.showError(req, resp);
                 return;
             }
+
             resultSet = preparedStatement.executeQuery();
             List<Book> books = new ArrayList<>();
 
@@ -120,6 +129,7 @@ public class BookAction extends HttpServlet {
                 );
                 books.add(book);
             }
+
             req.getSession().setAttribute("books", books);
             resp.sendRedirect("admin.jsp");
         } catch (SQLException e) {
@@ -136,7 +146,7 @@ public class BookAction extends HttpServlet {
         Connection connection = Db.getConnection();
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
-        String sql = "SELECT * FROM db_library.book WHERE id = ?";
+        String sql = "SELECT * FROM javaee_library.book WHERE id = ?";
 
         try {
             if(connection != null) {
@@ -176,9 +186,9 @@ public class BookAction extends HttpServlet {
         double price = Double.parseDouble(req.getParameter("price").trim());
         int amount = Integer.parseInt(req.getParameter("amount").trim());
 
-        Connection connection = Db.getConnection(); //  数据库连接
-        PreparedStatement preparedStatement = null;   //初始化
-        String sql = "UPDATE db_library.book SET title=?,author=?,pub= ?,time=?,price=?,amount=? WHERE id=?";
+        Connection connection = Db.getConnection();
+        PreparedStatement preparedStatement = null;
+        String sql = "UPDATE javaee_library.book SET title = ?,author= ?,pub = ?,time = ?,price = ?,amount = ? WHERE id  = ?";
 
         try {
             if(connection != null) {
@@ -196,6 +206,7 @@ public class BookAction extends HttpServlet {
             preparedStatement.setInt(7, id);
 
             preparedStatement.executeUpdate();
+
             resp.sendRedirect("book?action=queryAll");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -210,7 +221,7 @@ public class BookAction extends HttpServlet {
 
         Connection connection = Db.getConnection();
         PreparedStatement preparedStatement = null;
-        String sql = "DELETE FROM db_library.book WHERE id = ?";
+        String sql = "DELETE FROM javaee_library.book WHERE id = ?";
 
         try {
             if(connection != null) {
@@ -232,13 +243,14 @@ public class BookAction extends HttpServlet {
 
     private void query(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        String key=req.getParameter("key");
+        String key = req.getParameter("key");
         String value = req.getParameter("value");
 
         Connection connection = Db.getConnection();
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
-        String sql = "SELECT * FROM db_library.book WHERE "+key+" LIKE ?";
+
+        String sql = "SELECT * FROM javaee_library.book WHERE " + key + " LIKE ?";
 
         try {
             if(connection != null) {
@@ -247,21 +259,22 @@ public class BookAction extends HttpServlet {
                 Error.showError(req, resp);
                 return;
             }
-            preparedStatement.setString(1,"%"+value+"%");
+            preparedStatement.setString(1, "%" + value + "%");
             resultSet = preparedStatement.executeQuery();
             List<Book> books = new ArrayList<>();
-           while( resultSet.next()) {
-               Book book = new Book(
-                       resultSet.getInt("id"),
-                       resultSet.getString("title"),
-                       resultSet.getString("author"),
-                       resultSet.getString("pub"),
-                       resultSet.getString("time"),
-                       resultSet.getDouble("price"),
-                       resultSet.getInt("amount")
-               );
-               books.add(book);
-           }
+            while(resultSet.next()) {
+                Book book = new Book(
+                        resultSet.getInt("id"),
+                        resultSet.getString("title"),
+                        resultSet.getString("author"),
+                        resultSet.getString("pub"),
+                        resultSet.getString("time"),
+                        resultSet.getDouble("price"),
+                        resultSet.getInt("amount")
+                );
+                books.add(book);
+            }
+
             req.getSession().setAttribute("books", books);
             resp.sendRedirect("index.jsp");
         } catch (SQLException e) {
@@ -270,6 +283,7 @@ public class BookAction extends HttpServlet {
             Db.close(resultSet, preparedStatement, connection);
         }
     }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         doPost(req, resp);

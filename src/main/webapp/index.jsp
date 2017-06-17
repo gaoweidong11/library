@@ -6,8 +6,8 @@
   To change this template use File | Settings | File Templates.
 --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <html>
 <head>
     <title>主页</title>
@@ -35,7 +35,7 @@ ${sessionScope.username}
 </form>
 <hr>
 <form action="userBook" method="post">
-    <input type="hidden" name="action" value="add">
+    <input type="hidden" name="action" value="borrowBook">
     <input type="hidden" name="userId" value="${sessionScope.userId}">
     <c:if test="${fn:length(sessionScope.books) ne 0}">
         <table>
@@ -67,6 +67,25 @@ ${sessionScope.username}
         </table>
         <input type="submit" value="借书">
     </c:if>
-</form
+</form>
+<hr>
+<table>
+    <tr>
+        <th>序号</th>
+        <th>书名</th>
+        <th>借书时间</th>
+        <th>还书时间</th>
+        <th>操作</th>
+    </tr>
+    <c:forEach var="borrow" items="${sessionScope.list}" varStatus="vs">
+        <tr>
+            <td>${vs.count}</td>
+            <td>${borrow[2]}</td>
+            <td>${borrow[3]}</td>
+            <td>${borrow[4]}</td>
+            <td><a href="userBook?action=returnBook&userBookId=${borrow[0]}&bookId=${borrow[1]}">还书</a></td>
+        </tr>
+    </c:forEach>
+</table>
 </body>
 </html>

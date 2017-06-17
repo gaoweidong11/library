@@ -14,7 +14,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
 /**
  * Created by 高伟冬 on 2017/6/16.
  * library
@@ -28,15 +27,19 @@ public class UserBookAction extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
 
-        if ("add".equals(action)) {
-            add(req, resp);
+        if ("borrowBook".equals(action)) {
+            borrowBook(req, resp);
             return;
         }
 
+        if ("returnBook".equals(action)) {
+            returnBook(req, resp);
+            return;
+        }
         Error.showError(req, resp);
     }
 
-    private void add(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    private void borrowBook(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         int userId = Integer.parseInt(req.getParameter("userId"));
         String[] bookIds = req.getParameterValues("bookIds");
 
@@ -44,8 +47,7 @@ public class UserBookAction extends HttpServlet {
             int bookId = Integer.parseInt(bookIdString);
             if (canBorrow(bookId, req, resp)) {
                 // DML TRANSACTION
-                insert(req, resp, userId, bookId); // INSERT INTO db.table VALUES (?, ?, ...);
-                // TODO: 6/16/17 UPDATE db.table SET amount = amount - 1 WHERE id = bookId;
+                borrowBook(req, resp, userId, bookId);
             } else {
                 // TODO: 6/16/17 通知用户那些书不能借
             }
@@ -80,11 +82,50 @@ public class UserBookAction extends HttpServlet {
         return false;
     }
 
-    private void insert(HttpServletRequest req, HttpServletResponse resp, int userId, int bookId) throws IOException {
+    private void borrowBook(HttpServletRequest req, HttpServletResponse resp, int userId, int bookId) throws IOException {
         Connection connection = Db.getConnection();
         PreparedStatement preparedStatement = null;
 
-        String sql = "INSERT INTO db_library.user_book(userId, bookId) VALUE (?, ?)";
+        String sql = "INSERT INTO javaee_library.user_book(userId, bookId) VALUE (?, ?)";
+
+        if (connection == null) {
+            Error.showError(req, resp);
+            return;
+        }
+        try {
+            connection.setAutoCommit(false); // 1. 开启一次事务
+
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setInt(2, bookId);
+            preparedStatement.executeUpdate(); // DML 1
+
+            sql = "UPDATE javaee_library.book SET amount = amount - 1 WHERE id = ?";
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, bookId);
+            preparedStatement.executeUpdate(); // DML 2
+
+            connection.commit(); // 2. commit
+        } catch (Exception e) {
+            e.printStackTrace();
+            try {
+                connection.rollback(); // 3. rollback
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+        } finally {
+            Db.close(null, preparedStatement, connection);
+        }
+    }
+
+    private void returnBook(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        int userBookId = Integer.parseInt(req.getParameter("userBookId"));
+        int bookId = Integer.parseInt(req.getParameter("bookId"));
+
+        Connection connection = Db.getConnection();
+        PreparedStatement preparedStatement = null;
+
+        String sql = "UPDATE javaee_library.user_book SET returnTime = now() WHERE id = ?";
 
         try {
             if (connection != null) {
@@ -93,11 +134,27 @@ public class UserBookAction extends HttpServlet {
                 Error.showError(req, resp);
                 return;
             }
-            preparedStatement.setInt(1, userId);
-            preparedStatement.setInt(2, bookId);
+
+            connection.setAutoCommit(false);
+
+            preparedStatement.setInt(1, userBookId);
             preparedStatement.executeUpdate();
-        } catch (SQLException e) {
+
+            sql = "UPDATE javaee_library.book SET amount = amount + 1 WHERE id = ?";
+            preparedStatement = connection.prepareStatement(sql);
+            preparedStatement.setInt(1, bookId);
+            preparedStatement.executeUpdate();
+
+            connection.commit();
+
+            resp.sendRedirect("index.jsp"); // // TODO: 6/16/17
+        } catch (Exception e) {
             e.printStackTrace();
+            try {
+                connection.rollback();
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
         } finally {
             Db.close(null, preparedStatement, connection);
         }
