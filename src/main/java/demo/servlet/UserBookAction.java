@@ -60,7 +60,7 @@ public class UserBookAction extends HttpServlet {
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
 
-        String sql = "SELECT * FROM db_library.book WHERE id = ?";
+        String sql = "SELECT * FROM javaee_library.book WHERE id = ?";
 
         try {
             if (connection != null) {

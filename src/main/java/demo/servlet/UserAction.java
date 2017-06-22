@@ -9,12 +9,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.Writer;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
 /**
  * Created by 高伟冬 on 2017/6/15.
  * library
@@ -40,6 +42,11 @@ public class UserAction extends HttpServlet {
 
         if ("logout".equals(action)) {
             logout(req, resp);
+            return;
+        }
+
+        if ("isUsernameExist".equals(action)) {
+            isUsernameExist(req, resp);
             return;
         }
 
@@ -95,30 +102,29 @@ public class UserAction extends HttpServlet {
     }
 
     private void register(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        if (isUsernameExist(req, resp)) {
+            req.setAttribute("message", "用户名已经存在");
+            req.getRequestDispatcher("register.jsp").forward(req, resp);
+            return;
+        }
+
         String username = req.getParameter("username").trim();
         String password = req.getParameter("password");
 
         Connection connection = Db.getConnection();
         PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
-
-        String sql = "SELECT * FROM javaee_library.user WHERE username = ?";
+        String sql = "INSERT INTO javaee_library.user(username, password) VALUES(?, ?)";
 
         try {
+
             if (connection != null) {
                 preparedStatement = connection.prepareStatement(sql);
             } else {
                 Error.showError(req, resp);
                 return;
             }
-            preparedStatement.setString(1, username);
-            resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                req.setAttribute("message", "用户名存在");
-                return;
-            }
 
-            sql = "INSERT INTO javaee_library.user(username, password) VALUES(?, ?)";
             preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, password);
@@ -128,7 +134,7 @@ public class UserAction extends HttpServlet {
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            Db.close(resultSet, preparedStatement, connection);
+            Db.close(null, preparedStatement, connection);
         }
     }
 
@@ -220,6 +226,46 @@ public class UserAction extends HttpServlet {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private boolean isUsernameExist(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        String username = req.getParameter("username").trim();
+
+        Connection connection = Db.getConnection();
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+
+        String sql = "SELECT * FROM javaee_library.user WHERE username = ?";
+
+        resp.setContentType("text/html; charset=UTF-8");
+        Writer writer = resp.getWriter();
+
+        try {
+            if (connection != null) {
+                preparedStatement = connection.prepareStatement(sql);
+            } else {
+                Error.showError(req, resp);
+                return false; // ?
+            }
+
+            preparedStatement.setString(1, username);
+            resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                writer.write("true");
+                return true;
+            } else {
+                writer.write("false");
+                return false;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            Db.close(resultSet, preparedStatement, connection);
+        }
+        Error.showError(req, resp);
+        return false;
     }
 
     @Override

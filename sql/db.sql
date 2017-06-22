@@ -14,6 +14,9 @@ CREATE TABLE javaee_library.user (
 )
   COMMENT '用户表';
 
+SELECT *
+FROM javaee_library.user;
+
 
 DROP TABLE IF EXISTS javaee_library.book;
 CREATE TABLE javaee_library.book (
@@ -75,7 +78,7 @@ INSERT INTO javaee_library.user VALUE (NULL, 'u1', 'p', 'r');
 INSERT INTO javaee_library.user VALUE (NULL, 'u2', 'p', 'r');
 ROLLBACK;
 COMMIT;
-
+;
 SELECT
   b.title,
   ub.borrowTime,
@@ -92,3 +95,5 @@ SELECT
 FROM javaee_library.book b INNER JOIN javaee_library.user u
   INNER JOIN javaee_library.user_book ub
     ON b.id = ub.bookId AND u.id = ub.userId;
+
+# USE javaee_library
